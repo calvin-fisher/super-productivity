@@ -48,7 +48,7 @@ describe('PollIssueUpdatesEffects', () => {
       issueProviderKey: ICAL_TYPE,
       isEnabled: true,
       isAutoPoll: true,
-      isAutoAddToBacklog: false,
+      isAutoCreateTasksEnabled: false,
       isIntegratedAddTaskBar: false,
       defaultProjectId: null,
       pinnedSearch: null,

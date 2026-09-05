@@ -209,6 +209,11 @@ export interface IssueProviderBase extends BaseIssueProviderCfg {
   migratedFromProjectId?: string;
   isAutoPoll?: boolean;
   isAutoAddToBacklog?: boolean;
+  // Only meaningful when `isAutoAddToBacklog` is enabled. When the project's
+  // backlog is enabled, defaulting this to true preserves today's behavior
+  // (new auto-imported issues land in the backlog); users who want new
+  // issues to surface in the project's main list regardless turn this off.
+  isAddToBacklogIfEnabled?: boolean;
   isIntegratedAddTaskBar?: boolean;
   pollingMode?: IssueProviderPollingMode;
   defaultTagIds?: string[];

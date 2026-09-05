@@ -139,6 +139,7 @@ export const ISSUE_PROVIDER_DEFAULT_COMMON_CFG: Omit<
 > = {
   isAutoPoll: true,
   isAutoAddToBacklog: false,
+  isAddToBacklogIfEnabled: false,
   isIntegratedAddTaskBar: false,
   defaultProjectId: null,
   pinnedSearch: null,

@@ -9,6 +9,7 @@ export interface RedmineCfg extends BaseIssueProviderCfg {
   isAutoPoll?: boolean;
   isSearchIssuesFromRedmine?: boolean;
   isAutoAddToBacklog?: boolean;
+  isAddToBacklogIfEnabled?: boolean;
   isShowTimeTrackingDialog?: boolean;
   isShowTimeTrackingDialogForEachSubTask?: boolean;
   timeTrackingDialogDefaultTime?: JiraWorklogExportDefaultTime;

@@ -23,6 +23,7 @@ export const DEFAULT_REDMINE_CFG: RedmineCfg = {
   isAutoPoll: false,
   isSearchIssuesFromRedmine: false,
   isAutoAddToBacklog: false,
+  isAddToBacklogIfEnabled: false,
   isShowTimeTrackingDialog: false,
   isShowTimeTrackingDialogForEachSubTask: false,
 };

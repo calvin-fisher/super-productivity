@@ -79,6 +79,7 @@ describe('IssueService', () => {
       'update',
       'remove',
       'removeMultipleTasks',
+      'getAllIssueIdsForProviderEverywhere',
     ]);
     snackServiceSpy = jasmine.createSpyObj('SnackService', ['open']);
     workContextServiceSpy = jasmine.createSpyObj('WorkContextService', [], {
@@ -785,6 +786,145 @@ describe('IssueService', () => {
           msg: T.F.TASK.S.FOUND_MOVE_FROM_BACKLOG,
         }),
       );
+    });
+  });
+
+  describe('checkAndImportNewIssuesToBacklogForProject - backlog placement', () => {
+    let jiraServiceMock: jasmine.SpyObj<JiraCommonInterfacesService>;
+    const newIssue = { id: 'JIRA-NEW', title: 'New Jira Issue' };
+
+    // addTaskFromIssue is fired without await inside the production loop, so we
+    // need a microtask flush to observe its effect on the spy.
+    const runAndFlush = async (fn: () => Promise<unknown>): Promise<void> => {
+      await fn();
+      await new Promise<void>((r) => setTimeout(r, 0));
+    };
+
+    const setupForBacklogImport = (): void => {
+      jiraServiceMock = service.ISSUE_SERVICE_MAP[
+        'JIRA'
+      ] as jasmine.SpyObj<JiraCommonInterfacesService>;
+      (jiraServiceMock as any).getNewIssuesToAddToBacklog = jasmine
+        .createSpy('getNewIssuesToAddToBacklog')
+        .and.resolveTo([newIssue]);
+      taskServiceSpy.getAllIssueIdsForProviderEverywhere = jasmine
+        .createSpy('getAllIssueIdsForProviderEverywhere')
+        .and.resolveTo([]);
+      taskServiceSpy.checkForTaskWithIssueEverywhere.and.resolveTo(null);
+      taskServiceSpy.add.and.returnValue('new-task-id');
+      (service.ISSUE_SERVICE_MAP['JIRA'] as any).getAddTaskData = () => ({
+        title: 'New Jira Issue',
+      });
+    };
+
+    it('should add to main list when isAddToBacklogIfEnabled is false (default)', async () => {
+      setupForBacklogImport();
+      issueProviderServiceSpy.getCfgOnce$.and.returnValue(
+        of({
+          defaultProjectId: 'proj-1',
+          defaultTagIds: [],
+          isAddToBacklogIfEnabled: false,
+        } as any),
+      );
+      projectServiceSpy.getByIdOnce$.and.returnValue(
+        of({ isEnableBacklog: true } as any),
+      );
+
+      await runAndFlush(() =>
+        service.checkAndImportNewIssuesToBacklogForProject('JIRA', 'jira-provider-1'),
+      );
+
+      expect(taskServiceSpy.add).toHaveBeenCalledWith(
+        'New Jira Issue',
+        false,
+        jasmine.any(Object),
+      );
+    });
+
+    it('should add to backlog when isAddToBacklogIfEnabled is true and project backlog is enabled', async () => {
+      setupForBacklogImport();
+      issueProviderServiceSpy.getCfgOnce$.and.returnValue(
+        of({
+          defaultProjectId: 'proj-1',
+          defaultTagIds: [],
+          isAddToBacklogIfEnabled: true,
+        } as any),
+      );
+      projectServiceSpy.getByIdOnce$.and.returnValue(
+        of({ isEnableBacklog: true } as any),
+      );
+
+      await runAndFlush(() =>
+        service.checkAndImportNewIssuesToBacklogForProject('JIRA', 'jira-provider-1'),
+      );
+
+      expect(taskServiceSpy.add).toHaveBeenCalledWith(
+        'New Jira Issue',
+        true,
+        jasmine.any(Object),
+      );
+    });
+
+    it('should add to main list when isAddToBacklogIfEnabled is true but project backlog is disabled', async () => {
+      setupForBacklogImport();
+      issueProviderServiceSpy.getCfgOnce$.and.returnValue(
+        of({
+          defaultProjectId: 'proj-1',
+          defaultTagIds: [],
+          isAddToBacklogIfEnabled: true,
+        } as any),
+      );
+      projectServiceSpy.getByIdOnce$.and.returnValue(
+        of({ isEnableBacklog: false } as any),
+      );
+
+      await runAndFlush(() =>
+        service.checkAndImportNewIssuesToBacklogForProject('JIRA', 'jira-provider-1'),
+      );
+
+      expect(taskServiceSpy.add).toHaveBeenCalledWith(
+        'New Jira Issue',
+        false,
+        jasmine.any(Object),
+      );
+    });
+
+    it('should add to main list when defaultProjectId is missing', async () => {
+      setupForBacklogImport();
+      issueProviderServiceSpy.getCfgOnce$.and.returnValue(
+        of({
+          defaultProjectId: null,
+          defaultTagIds: [],
+          isAddToBacklogIfEnabled: true,
+        } as any),
+      );
+
+      await runAndFlush(() =>
+        service.checkAndImportNewIssuesToBacklogForProject('JIRA', 'jira-provider-1'),
+      );
+
+      expect(taskServiceSpy.add).toHaveBeenCalledWith(
+        'New Jira Issue',
+        false,
+        jasmine.any(Object),
+      );
+      expect(projectServiceSpy.getByIdOnce$).not.toHaveBeenCalled();
+    });
+
+    it('should not call getCfgOnce$ when no new issues are found', async () => {
+      setupForBacklogImport();
+      (jiraServiceMock as any).getNewIssuesToAddToBacklog = jasmine
+        .createSpy('getNewIssuesToAddToBacklog')
+        .and.resolveTo([]);
+      issueProviderServiceSpy.getCfgOnce$.and.returnValue(
+        of({ defaultProjectId: 'proj-1' } as any),
+      );
+
+      await runAndFlush(() =>
+        service.checkAndImportNewIssuesToBacklogForProject('JIRA', 'jira-provider-1'),
+      );
+
+      expect(taskServiceSpy.add).not.toHaveBeenCalled();
     });
   });
 });

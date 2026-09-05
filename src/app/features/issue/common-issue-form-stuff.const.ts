@@ -85,6 +85,17 @@ export const ISSUE_PROVIDER_COMMON_FORM_FIELDS: LimitedFormlyFieldConfig<IssuePr
       },
     },
     {
+      key: 'isAddToBacklogIfEnabled',
+      type: 'checkbox',
+      expressions: {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'props.disabled': '!model.isAutoAddToBacklog',
+      },
+      props: {
+        label: T.F.ISSUE.FORM.ADD_TO_BACKLOG_IF_ENABLED,
+      },
+    },
+    {
       key: 'isAutoPoll',
       type: 'checkbox',
       props: {
